@@ -19,6 +19,8 @@ Observações:
 #include "util/trackball.h"
 #include "util/shaderutil.h"
 
+GLdouble obsX = 0, obsY = 0, obsZ = 0;
+
 static void updateModels(void);
 
 static char *Model_file = NULL;		/* nome do arquivo do objeto */
@@ -62,29 +64,61 @@ static void InitViewInfo(ViewInfo *view){
    view->StartDistance = 0.0;
 }
 
-static void read_model_real(void){
+static void read_model(void){
    float objScale;
 
    /* lendo o modelo */
-   Model = glmReadOBJ(Model_file);
-   objScale = glmUnitize(Model);
-   glmFacetNormals(Model);
-   if (Model->numnormals == 0) {
+   courage_model = glmReadOBJ(courage_file);
+   objScale = glmUnitize(courage_model);
+   glmFacetNormals(courage_model);
+   if (courage_model->numnormals == 0) {
       GLfloat smoothing_angle = 90.0;
-      glmVertexNormals(Model, smoothing_angle);
+      glmVertexNormals(courage_model, smoothing_angle);
    }
 
-   glmLoadTextures(Model);
-   glmReIndex(Model);
-   glmMakeVBOs(Model);
-}
+   glmLoadTextures(courage_model);
+   glmReIndex(courage_model);
+   glmMakeVBOs(courage_model);
 
-static void read_model(void) {
-    int i;
-    for(i = 0; i < 4; i ++){
-        read_model_real();
-        updateModels();
-    }
+   /* lendo o modelo */
+   house_model = glmReadOBJ(house_file);
+   objScale = glmUnitize(house_model);
+   glmFacetNormals(house_model);
+   if (house_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(house_model, smoothing_angle);
+   }
+
+   glmLoadTextures(house_model);
+   glmReIndex(house_model);
+   glmMakeVBOs(house_model);
+
+
+   /* carregando o truck */
+    truck_model = glmReadOBJ(truck_file);
+   objScale = glmUnitize(truck_model);
+   glmFacetNormals(truck_model);
+   if (truck_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(truck_model, smoothing_angle);
+   }
+
+   glmLoadTextures(truck_model);
+   glmReIndex(truck_model);
+   glmMakeVBOs(truck_model);
+
+     /* carregando o moinho */
+    windmIll_model = glmReadOBJ(windmIll_file);
+   objScale = glmUnitize(windmIll_model);
+   glmFacetNormals(windmIll_model);
+   if (windmIll_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(windmIll_model, smoothing_angle);
+   }
+
+   glmLoadTextures(windmIll_model);
+   glmReIndex(windmIll_model);
+   glmMakeVBOs(windmIll_model);
 }
 
 static void init(void){
@@ -93,7 +127,6 @@ static void init(void){
    glEnable(GL_CULL_FACE);
    glEnable(GL_NORMALIZE);
 }
-
 
 static void reshape(int width, int height) {
    float ar = 0.5 * (float) width / (float) height; //razão de aspecto
@@ -111,13 +144,44 @@ static void reshape(int width, int height) {
 static void display(void){
    GLfloat rot[4][4];
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
+    /// carregando o courage
    glPushMatrix();
-      glTranslatef(0.0, 0.0, -View.Distance);
+      glTranslatef(0.0, -3.2, -View.Distance);
       glRotatef(View.rotX,1,0,0);
-	  glRotatef(View.rotY,0,1,0);
-      glScalef(Scale, Scale, Scale );
-      glmDrawVBO(Model);
+//	  glRotatef(View.rotY,0,1,0);
+      glScalef(Scale/4, Scale/4, Scale/4);
+      glmDrawVBO(courage_model);
+   glPopMatrix();
+
+   /// carregando o moinho
+   glPushMatrix();
+      glTranslatef(5.0, 4.0, -View.Distance+28);
+      glRotatef(View.rotX,1,0,0);
+//	  glRotatef(View.rotY,0,1,0);
+      glScalef(2*Scale, 2*Scale, 2*Scale);
+      glmDrawVBO(windmIll_model);
+   glPopMatrix();
+
+   /// carregando o carro
+   glPushMatrix();
+      glTranslatef(-5.0, -3.2, -View.Distance+10);
+      glRotatef(View.rotX,1,0,0);
+//	  glRotatef(View.rotY,0,1,0);
+	  glRotatef(45, 0.0, 1.0, 0.0);
+      glScalef(Scale, Scale, Scale);
+      glmDrawVBO(truck_model);
+   glPopMatrix();
+
+    /// carregando a casa
+   glPushMatrix();
+      glTranslatef(5.0, -2.0, -View.Distance);
+      glRotatef(View.rotX,1,0,0);
+	  //glRotatef(View.rotY,0,1,0);
+      glScalef(2.5*Scale, 2.5*Scale, 2.5*Scale );
+      glmDrawVBO(house_model);
    glPopMatrix();
    glutSwapBuffers();
 }
@@ -125,7 +189,7 @@ static void display(void){
 /**
  * Evento de Mouse
  */
-#define SENS_ROT	5.0
+#define SENS_ROT	15.0
 static void Mouse(int button, int state, int x, int y){
     if (button == GLUT_LEFT_BUTTON) { //mouse - botão da esquera rotaciona o objeto
         if (state == GLUT_DOWN) {
@@ -197,28 +261,36 @@ static void DoFeatureChecks(void){
    }
 }
 
-static void updateModels(void){
-    currentModel ++;
+void SpecialKeys(int key, int x, int y) {
+    switch (key) {
+        case GLUT_KEY_LEFT :
+            View.x_ini = x;
+            View.y_ini = y;
+            View.rotX_ini = View.rotX;
+            View.rotY_ini = View.rotY;
+            obsX -=10;
+			break;
+        case GLUT_KEY_RIGHT :
+            obsX +=10;
+			break;
+        case GLUT_KEY_UP :
+            obsY +=10;
+			break;
+        case GLUT_KEY_DOWN :
+            obsY -=10;
+            break;
+        case GLUT_KEY_HOME :
+            obsZ +=10;
+            break;
+        case GLUT_KEY_END :
+            obsZ -=10;
+            break;
+		}
 
-    switch(currentModel){
-        case 1:
-            Model_file = courage_file;
-            //Model = courage_model;
-            break;
-        case 2:
-            Model_file = house_file;
-            //Model = house_model;
-            break;
-        case 3:
-            Model_file = truck_file;
-            //Model = truck_model;
-            break;
-        case 4:
-            Model_file = windmIll_file;
-            //Model = windmIll_model;
-            currentModel = 0;
-            break;
-    }
+    printf("Tecla apertada");
+    glLoadIdentity();
+    gluLookAt(obsX,obsY,obsZ, 0,0,0, 1,0,0);
+    glutPostRedisplay();
 }
 
 int main(int argc, char** argv) {
@@ -230,19 +302,18 @@ int main(int argc, char** argv) {
     truck_file = "Truck_obj.obj";
     windmIll_file = "windmIll.obj";
 
-    updateModels();
-
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow("objview");
-
+gluPerspective(70, 1.0, 1.0, 50);   /// criando a projecao perspectiva
     glewInit();
 
     DoFeatureChecks();
 
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
-    glutMouseFunc(Mouse);
-    glutMotionFunc(Motion);
+    //glutMouseFunc(Mouse);
+    //glutMotionFunc(Motion);
+    glutSpecialFunc(SpecialKeys);
 
     InitViewInfo(&View);
 
