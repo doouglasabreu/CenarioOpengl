@@ -1,13 +1,3 @@
-/*
-
-Programa para carregar modelos de objetos OBJ usando OpenGL e GLM
-
-Observações:
-- câmera esta posição padrão (na origem olhando pra a direção negativa de z)
-- usando fonte de luz padrão (fonte de luz distante e na direção negativa de z)
-
-*/
-
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,6 +11,9 @@ Observações:
 
 GLdouble obsX = 0, obsY = 0, obsZ = 0;
 
+float distancia_aviao = -300;
+float angulo_aviao = 0;
+
 float z_covarde = -0.8;
 float x_covarde = 0;
 float angulo_covarde = 0;
@@ -28,8 +21,6 @@ float angulo_covarde = 0;
 float z_car = -5;
 float x_car = 10;
 float angulo_car = -90;
-
-float angulo_lua = 0;
 
 int objeto = 0;
 
@@ -56,6 +47,9 @@ static GLMmodel *casa_model;
 
 static char *car_file;
 static GLMmodel *car_model;
+
+static char *aviao_file;
+static GLMmodel *aviao_model;
 
 static int currentModel = 0;        /* numero do Model atual */
 
@@ -84,8 +78,9 @@ static void InitViewInfo(ViewInfo *view){
 
 void criaLua(){
     //limpa o buffer
-    ///glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glLoadIdentity();
     //define material da superfície
     float kd[4] = {0.65f, 0.65f, 0.0f, 1.0f};
     float ks[4] = {0.9f, 0.9f, 0.9f, 1.0f};
@@ -143,19 +138,19 @@ static void read_model(void){
    glmReIndex(chao_model);
    glmMakeVBOs(chao_model);
 
-    /*
-    /// carregando a lua
-   lua_model = glmReadOBJ(lua_file);
-   objScale = glmUnitize(lua_model);
-   glmFacetNormals(lua_model);
-   if (lua_model->numnormals == 0) {
+
+    /// carregando o aviao
+   aviao_model = glmReadOBJ(aviao_file);
+   objScale = glmUnitize(aviao_model);
+   glmFacetNormals(aviao_model);
+   if (aviao_model->numnormals == 0) {
       GLfloat smoothing_angle = 90.0;
-      glmVertexNormals(lua_model, smoothing_angle);
+      glmVertexNormals(aviao_model, smoothing_angle);
    }
 
-   glmLoadTextures(lua_model);
-   glmReIndex(lua_model);
-   glmMakeVBOs(lua_model);*/
+   glmLoadTextures(aviao_model);
+   glmReIndex(aviao_model);
+   glmMakeVBOs(aviao_model);
 
     /// carregando a casa
    casa_model = glmReadOBJ(casa_file);
@@ -198,7 +193,6 @@ void lighting(){
     GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     GLfloat black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-
     glLightfv(GL_LIGHT0,GL_POSITION,luzlua);
     glLightfv(GL_LIGHT0,GL_AMBIENT,black);
     glLightfv(GL_LIGHT0,GL_DIFFUSE,white);
@@ -227,7 +221,7 @@ static void display(void){
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-//criaLua();
+    criaLua();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     /// carregando a chao
@@ -258,16 +252,15 @@ static void display(void){
       glmDrawVBO(windmIll_model);
    glPopMatrix();
 
-    /*
-   /// carregando a lua
+   /// carregando o aviao
    glPushMatrix();
-      glTranslatef(-10.0, 14.0, -View.Distance-30);
-      glRotatef(angulo_lua, 0.0, 1.0, 0.0);
+      glTranslatef(-10.0, 14.0, -View.Distance+distancia_aviao);
+      glRotatef(angulo_aviao, 0.0, 0.0, 1.0);
 //    glRotatef(View.rotX,1,0,0);
 //	  glRotatef(View.rotY,0,1,0);
       glScalef(Scale, Scale, Scale);
-      glmDrawVBO(lua_model);
-   glPopMatrix();*/
+      glmDrawVBO(aviao_model);
+   glPopMatrix();
 
    /// carregando a casa
    glPushMatrix();
@@ -422,8 +415,30 @@ void opcao(int key, int x, int y){
     }
 }
 
-void animacao(){
-    angulo_lua += 40;
+void spinDisplay(void){
+   //playSound("Airplane.wav");
+   distancia_aviao = distancia_aviao + 1;
+   if (distancia_aviao == 0){
+      distancia_aviao = -300;
+      angulo_aviao = 0;
+    }
+
+    if(distancia_aviao > -180)
+        angulo_aviao += 1;
+
+   glutPostRedisplay();
+}
+
+int playSound(char *filename) {
+    char command[256];
+    int status;
+
+    /* create command to execute */
+    sprintf(command, "aplay -c 1 -q -t wav %s", filename);
+
+    /* play sound */
+    status = system(command);
+    return status;
 }
 
 int main(int argc, char** argv) {
@@ -433,9 +448,9 @@ int main(int argc, char** argv) {
     courage_file = "courage_apply.obj";
     windmIll_file = "windmIll.obj";
     chao_file = "rock.obj";
-    lua_file = "Orange.obj";
     casa_file = "houseA_obj.obj";
     car_file = "bobcat.obj";
+    aviao_file = "plane.obj";
 
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow("objview");
@@ -448,8 +463,8 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(opcao);            // captura as teclas 'R' e 'T'
     //glutMouseFunc(Mouse);
     //glutMotionFunc(Motion);
+    glutIdleFunc(spinDisplay);
     glutSpecialFunc(SpecialKeys);
-    glutIdleFunc(animacao);
 
     InitViewInfo(&View);
 
