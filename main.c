@@ -21,6 +21,18 @@ Observações:
 
 GLdouble obsX = 0, obsY = 0, obsZ = 0;
 
+float z_covarde = -0.8;
+float x_covarde = 0;
+float angulo_covarde = 0;
+
+float z_car = -5;
+float x_car = 10;
+float angulo_car = -90;
+
+float angulo_lua = 0;
+
+int objeto = 0;
+
 static void updateModels(void);
 
 static char *Model_file = NULL;		/* nome do arquivo do objeto */
@@ -30,14 +42,20 @@ static GLMmodel *Model;             /* modelo do objeto*/
 static char *courage_file;
 static GLMmodel *courage_model;
 
-static char *house_file;
-static GLMmodel *house_model;
+static char *chao_file;
+static GLMmodel *chao_model;
 
-static char *truck_file;
-static GLMmodel *truck_model;
+static char *lua_file;
+static GLMmodel *lua_model;
 
 static char *windmIll_file;
 static GLMmodel *windmIll_model;
+
+static char *casa_file;
+static GLMmodel *casa_model;
+
+static char *car_file;
+static GLMmodel *car_model;
 
 static int currentModel = 0;        /* numero do Model atual */
 
@@ -64,10 +82,29 @@ static void InitViewInfo(ViewInfo *view){
    view->StartDistance = 0.0;
 }
 
+void criaLua(){
+    //limpa o buffer
+    ///glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //define material da superfície
+    float kd[4] = {0.65f, 0.65f, 0.0f, 1.0f};
+    float ks[4] = {0.9f, 0.9f, 0.9f, 1.0f};
+    float ns = 5.0f;
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, kd);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, ks);
+    glMaterialf(GL_FRONT, GL_SHININESS, ns);
+
+    //define que a matrix é a a model view
+    glMatrixMode(GL_MODELVIEW);
+    glTranslatef(-4, 8, -20);
+    glutSolidSphere(1.5, 40, 40);
+}
+
 static void read_model(void){
    float objScale;
 
-   /* lendo o modelo */
+   // lendo o modelo
    courage_model = glmReadOBJ(courage_file);
    objScale = glmUnitize(courage_model);
    glmFacetNormals(courage_model);
@@ -80,35 +117,8 @@ static void read_model(void){
    glmReIndex(courage_model);
    glmMakeVBOs(courage_model);
 
-   /* lendo o modelo */
-   house_model = glmReadOBJ(house_file);
-   objScale = glmUnitize(house_model);
-   glmFacetNormals(house_model);
-   if (house_model->numnormals == 0) {
-      GLfloat smoothing_angle = 90.0;
-      glmVertexNormals(house_model, smoothing_angle);
-   }
-
-   glmLoadTextures(house_model);
-   glmReIndex(house_model);
-   glmMakeVBOs(house_model);
-
-
-   /* carregando o truck */
-    truck_model = glmReadOBJ(truck_file);
-   objScale = glmUnitize(truck_model);
-   glmFacetNormals(truck_model);
-   if (truck_model->numnormals == 0) {
-      GLfloat smoothing_angle = 90.0;
-      glmVertexNormals(truck_model, smoothing_angle);
-   }
-
-   glmLoadTextures(truck_model);
-   glmReIndex(truck_model);
-   glmMakeVBOs(truck_model);
-
-     /* carregando o moinho */
-    windmIll_model = glmReadOBJ(windmIll_file);
+     /// carregando o moinho
+   windmIll_model = glmReadOBJ(windmIll_file);
    objScale = glmUnitize(windmIll_model);
    glmFacetNormals(windmIll_model);
    if (windmIll_model->numnormals == 0) {
@@ -119,13 +129,84 @@ static void read_model(void){
    glmLoadTextures(windmIll_model);
    glmReIndex(windmIll_model);
    glmMakeVBOs(windmIll_model);
+
+    /// carregando a pedra
+   chao_model = glmReadOBJ(chao_file);
+   objScale = glmUnitize(chao_model);
+   glmFacetNormals(chao_model);
+   if (chao_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(chao_model, smoothing_angle);
+   }
+
+   glmLoadTextures(chao_model);
+   glmReIndex(chao_model);
+   glmMakeVBOs(chao_model);
+
+    /*
+    /// carregando a lua
+   lua_model = glmReadOBJ(lua_file);
+   objScale = glmUnitize(lua_model);
+   glmFacetNormals(lua_model);
+   if (lua_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(lua_model, smoothing_angle);
+   }
+
+   glmLoadTextures(lua_model);
+   glmReIndex(lua_model);
+   glmMakeVBOs(lua_model);*/
+
+    /// carregando a casa
+   casa_model = glmReadOBJ(casa_file);
+   objScale = glmUnitize(casa_model);
+   glmFacetNormals(casa_model);
+   if (casa_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(casa_model, smoothing_angle);
+   }
+
+   glmLoadTextures(casa_model);
+   glmReIndex(casa_model);
+   glmMakeVBOs(casa_model);
+
+    /// carregando a car
+   car_model = glmReadOBJ(car_file);
+   objScale = glmUnitize(car_model);
+   glmFacetNormals(car_model);
+   if (car_model->numnormals == 0) {
+      GLfloat smoothing_angle = 90.0;
+      glmVertexNormals(car_model, smoothing_angle);
+   }
+
+   glmLoadTextures(car_model);
+   glmReIndex(car_model);
+   glmMakeVBOs(car_model);
 }
 
 static void init(void){
-   glClearColor(1.0, 1.0, 1.0, 0.0);
+   glClearColor(1.0, 1.0, 0.6, 0.0);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_CULL_FACE);
    glEnable(GL_NORMALIZE);
+
+    lighting();
+}
+
+void lighting(){
+    GLfloat luzlua[4] = {0.6f, 0.6f, 0.6f, 1.0f};
+    GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    GLfloat black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+
+
+    glLightfv(GL_LIGHT0,GL_POSITION,luzlua);
+    glLightfv(GL_LIGHT0,GL_AMBIENT,black);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,white);
+    glLightfv(GL_LIGHT0,GL_SPECULAR,white);
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
 }
 
 static void reshape(int width, int height) {
@@ -144,13 +225,25 @@ static void reshape(int width, int height) {
 static void display(void){
    GLfloat rot[4][4];
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+//criaLua();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    /// carregando a chao
+   glPushMatrix();
+      glTranslatef(1.0, -2.5, -View.Distance+5);
+      glRotatef(View.rotX,1,0,0);
+//	  glRotatef(View.rotY,0,1,0);
+      glScalef(Scale, Scale/2, 17*Scale);
+      glmDrawVBO(chao_model);
+   glPopMatrix();
 
     /// carregando o courage
    glPushMatrix();
-      glTranslatef(0.0, -3.2, -View.Distance);
-      glRotatef(View.rotX,1,0,0);
+      glTranslatef(x_covarde, -0.8, -View.Distance+z_covarde);
+      glRotatef(angulo_covarde, 0.0, 1.0, 0.0);
+      //glRotatef(View.rotX,1,0,0);
 //	  glRotatef(View.rotY,0,1,0);
       glScalef(Scale/4, Scale/4, Scale/4);
       glmDrawVBO(courage_model);
@@ -158,32 +251,44 @@ static void display(void){
 
    /// carregando o moinho
    glPushMatrix();
-      glTranslatef(5.0, 4.0, -View.Distance+28);
-      glRotatef(View.rotX,1,0,0);
+      glTranslatef(10.0, 4.0, -View.Distance-30);
+//      glRotatef(View.rotX,1,0,0);
 //	  glRotatef(View.rotY,0,1,0);
       glScalef(2*Scale, 2*Scale, 2*Scale);
       glmDrawVBO(windmIll_model);
    glPopMatrix();
 
-   /// carregando o carro
+    /*
+   /// carregando a lua
    glPushMatrix();
-      glTranslatef(-5.0, -3.2, -View.Distance+10);
-      glRotatef(View.rotX,1,0,0);
+      glTranslatef(-10.0, 14.0, -View.Distance-30);
+      glRotatef(angulo_lua, 0.0, 1.0, 0.0);
+//    glRotatef(View.rotX,1,0,0);
 //	  glRotatef(View.rotY,0,1,0);
-	  glRotatef(45, 0.0, 1.0, 0.0);
       glScalef(Scale, Scale, Scale);
-      glmDrawVBO(truck_model);
+      glmDrawVBO(lua_model);
+   glPopMatrix();*/
+
+   /// carregando a casa
+   glPushMatrix();
+      glTranslatef(-8.0, 0.0, -View.Distance-5);
+      //glRotatef(View.rotX,0,1,0);
+	  //glRotatef(View.rotY,0,1,0);
+      glScalef(Scale, Scale, Scale);
+      glmDrawVBO(casa_model);
    glPopMatrix();
 
-    /// carregando a casa
+   /// carregando o carro
    glPushMatrix();
-      glTranslatef(5.0, -2.0, -View.Distance);
-      glRotatef(View.rotX,1,0,0);
+      glTranslatef(x_car, 0.0, -View.Distance+z_car);
+      glRotatef(angulo_car, 0.0, 1.0, 0.0);        /// rotacionando em 45 graus no eixo x
+      //glRotatef(View.rotX,0,1,0);
 	  //glRotatef(View.rotY,0,1,0);
-      glScalef(2.5*Scale, 2.5*Scale, 2.5*Scale );
-      glmDrawVBO(house_model);
+      glScalef(Scale, Scale, Scale);
+      glmDrawVBO(car_model);
    glPopMatrix();
-   glutSwapBuffers();
+
+    glutSwapBuffers();
 }
 
 /**
@@ -262,35 +367,63 @@ static void DoFeatureChecks(void){
 }
 
 void SpecialKeys(int key, int x, int y) {
-    switch (key) {
-        case GLUT_KEY_LEFT :
-            View.x_ini = x;
-            View.y_ini = y;
-            View.rotX_ini = View.rotX;
-            View.rotY_ini = View.rotY;
-            obsX -=10;
-			break;
-        case GLUT_KEY_RIGHT :
-            obsX +=10;
-			break;
-        case GLUT_KEY_UP :
-            obsY +=10;
-			break;
-        case GLUT_KEY_DOWN :
-            obsY -=10;
-            break;
-        case GLUT_KEY_HOME :
-            obsZ +=10;
-            break;
-        case GLUT_KEY_END :
-            obsZ -=10;
-            break;
+    // covarde
+    if(objeto == 0){
+        switch (key) {
+            case GLUT_KEY_LEFT :
+                x_covarde -= 0.5;
+                angulo_covarde = 270;
+                break;
+            case GLUT_KEY_RIGHT :
+                x_covarde += 0.5;
+                angulo_covarde = 90;
+                break;
+            case GLUT_KEY_UP :
+                z_covarde -= 0.5;
+                angulo_covarde = 180;
+                break;
+            case GLUT_KEY_DOWN :
+                z_covarde += 0.5;
+                angulo_covarde = 0;
+                break;
 		}
+    } else if (objeto == 1){
+        switch (key) {
+            case GLUT_KEY_LEFT :
+                x_car -= 0.5;
+                angulo_car = 180;
+                break;
+            case GLUT_KEY_RIGHT :
+                x_car += 0.5;
+                angulo_car = 0;
+                break;
+            case GLUT_KEY_UP :
+                z_car -= 0.5;
+                angulo_car = 90;
+                break;
+            case GLUT_KEY_DOWN :
+                z_car += 0.5;
+                angulo_car = 270;
+                break;
+		}
+    }
 
-    printf("Tecla apertada");
-    glLoadIdentity();
-    gluLookAt(obsX,obsY,obsZ, 0,0,0, 1,0,0);
     glutPostRedisplay();
+}
+
+void opcao(int key, int x, int y){
+    switch(key){
+        case 'c':
+            objeto = 0; // covarde
+            break;
+        case 'b':
+            objeto = 1; // bobcat
+            break;
+    }
+}
+
+void animacao(){
+    angulo_lua += 40;
 }
 
 int main(int argc, char** argv) {
@@ -298,22 +431,25 @@ int main(int argc, char** argv) {
     glutInitWindowSize(WinWidth, WinHeight);
 
     courage_file = "courage_apply.obj";
-    house_file = "houseA_obj.obj";
-    truck_file = "Truck_obj.obj";
     windmIll_file = "windmIll.obj";
+    chao_file = "rock.obj";
+    lua_file = "Orange.obj";
+    casa_file = "houseA_obj.obj";
+    car_file = "bobcat.obj";
 
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow("objview");
-gluPerspective(70, 1.0, 1.0, 50);   /// criando a projecao perspectiva
     glewInit();
 
     DoFeatureChecks();
 
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
+    glutKeyboardFunc(opcao);            // captura as teclas 'R' e 'T'
     //glutMouseFunc(Mouse);
     //glutMotionFunc(Motion);
     glutSpecialFunc(SpecialKeys);
+    glutIdleFunc(animacao);
 
     InitViewInfo(&View);
 
